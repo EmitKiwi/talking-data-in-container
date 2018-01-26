@@ -1,0 +1,36 @@
+version: '2.3'
+services:
+  server:
+    image: emitkiwi/tdic
+    networks:
+      - app_network
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: postgres
+    command: >
+      bash -c "psql -h postgres_server -U postgres --file=/app/db.sql
+      && ruby server.rb "
+    ports:
+      - '3000:3000'
+  db:
+    image: postgres
+    restart: always
+    hostname: postgres_server
+    networks:
+      app_network:
+        aliases:
+          - postgres_server
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: talkingdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+networks:
+  app_network:
+    driver: bridge
